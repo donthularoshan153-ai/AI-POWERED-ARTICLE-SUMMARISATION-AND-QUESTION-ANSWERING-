@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>QA Bot - Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .chat-container {
+        background: white;
+        width: 500px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: 80vh;
+      }
+      .chat-header {
+        background: #007bff;
+        color: white;
+        padding: 15px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        text-align: center;
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .message {
+        max-width: 70%;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        position: relative;
+      }
+      .message.user {
+        background: #007bff;
+        color: white;
+        align-self: flex-end;
+      }
+      .message.bot {
+        background: #e9ecef;
+        color: black;
+        align-self: flex-start;
+      }
+      .chat-input {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #ccc;
+      }
+      .chat-input input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      .chat-input button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+      .chat-input button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        <h2>Chat with QA Bot</h2>
+      </div>
+      <div
+        class="chat-messages"
+        id="chat-messages">
+        <!-- Chat history will be dynamically added here -->
+        {% for qa in chat_history %}
+        <div class="message bot">{{ qa.answer }}</div>
+        <div class="message user">{{ qa.question }}</div>
+        {% endfor %}
+      </div>
+      <form
+        method="post"
+        class="chat-input"
+        id="chat-form">
+        {% csrf_token %}
+        <input
+          type="text"
+          name="question"
+          id="question-input"
+          placeholder="Ask a question..."
+          required />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script>
+      // JavaScript to handle form submission without page reload
+      document
+        .getElementById('chat-form')
+        .addEventListener('submit', function (e) {
+          e.preventDefault(); // Prevent the form from submitting the traditional way
+
+          const questionInput = document.getElementById('question-input');
+          const question = questionInput.value.trim();
+
+          if (question) {
+            // Add the user's question to the chat
+            const chatMessages = document.getElementById('chat-messages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.textContent = question;
+            chatMessages.appendChild(userMessage);
+
+            // Send the question to the server using AJAX
+            fetch('/chat/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector(
+                  '[name=csrfmiddlewaretoken]'
+                ).value,
+              },
+              body: `question=${encodeURIComponent(question)}`,
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                // Add the bot's answer to the chat
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.textContent = data.answer;
+                chatMessages.appendChild(botMessage);
+
+                // Scroll to the bottom of the chat
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+              });
+
+            // Clear the input field
+            questionInput.value = '';
+          }
+        });
+    </script>
+  </body>
+</html>
