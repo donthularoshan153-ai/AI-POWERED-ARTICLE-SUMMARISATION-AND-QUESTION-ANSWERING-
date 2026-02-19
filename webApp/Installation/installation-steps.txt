@@ -1,0 +1,8 @@
+#To create virtual environment an import modules.
+python -m venv venv
+Set-ExecutionPolicy Unrestricted -Scope Process
+venv\Scripts\activate
+pip install -r requirements.txt
+
+#To run server.
+python manage.py runserver
